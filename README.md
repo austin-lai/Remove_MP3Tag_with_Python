@@ -4,7 +4,7 @@
 ```markdown
 > Austin.Lai |
 > -----------| October 05th, 2024
-> -----------| Updated on October 05th, 2024
+> -----------| Updated on October 06th, 2024
 ```
 
 ---
