@@ -39,24 +39,27 @@ This project/repository is for <span style="color: red; font-weight: bold;">Educ
 
 A small Python project designed to streamline audio file metadata by removing specific fields from ID3v2.4 and APEv2 tags within audio files.
 
-Features:
-
-- Targeted environment: Windows, *Nix
-- Support ID3 and APEv2 tags
-- Support FLAC, MP3, WMA and M4A with AAC (Advanced Audio Codec) format files.
-- Python package: `mutagen`, `colorama`.
-- Search audio file metadata by keywords.
-- There are two set of list: `keywords` - the search will search through anything specify inside this list, `not_keywords` - the search will exclude anything specify inside this list.
-- Once keywords that are specified in the `keywords` list, it will display the result to user and prompt the user to enter `'yes' or 'y'` (case-insensitive) to remove the fields out of the audio files or `press 'Enter' to skip`.
-- Save the search result into a json file located at Desktop.
-- Handle script termination when `Ctrl+C` is pressed and save results before exiting.
-- Skip `cover art` and `acoustid fingerprint` field.
-- Show total files and folders that have been processed.
+> [!NOTE]
+> 
+> Features:
+> - Targeted environment: Windows, *Nix
+> - Support ID3 and APEv2 tags
+> - Support FLAC, MP3, WMA and M4A with AAC (Advanced Audio Codec) format files.
+> - Python package: `mutagen`, `colorama`.
+> - Search audio file metadata by keywords.
+> - There are two set of list: `keywords` - the search will search through anything specify inside this list, `not_keywords` - the search will exclude anything specify inside this list.
+> - Once keywords that are specified in the `keywords` list, it will display the result to user and prompt the user to enter `'yes' or 'y'` (case-insensitive) to remove the fields out of the audio files or `press 'Enter' to skip`.
+> - Save the search result into a json file located at Desktop.
+> - Handle script termination when `Ctrl+C` is pressed and save results before exiting.
+> - Skip `cover art` and `acoustid fingerprint` field.
+> - Show total files and folders that have been processed.
 
 This project is ideal for anyone looking to simplify or automate audio files metadata management.
 
-Please change the configuration accordingly to suits your environment.
+> [!IMPORTANT]
+> Please change the configuration accordingly to suits your environment.
 
+> [!WARNING]
 > 🚨 Important Instructions 🚨
 > - You may change the conditional in line 80: `if "cover art" in str(key).lower() or "acoustid fingerprint" in str(key).lower():`
 > - You may change the value of `directory` in line 230
