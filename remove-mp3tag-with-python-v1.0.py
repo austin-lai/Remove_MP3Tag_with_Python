@@ -77,7 +77,7 @@ def search_keywords(tags, keywords, not_keywords):
         # print(f"Key: {key}, Type: {type(key)}")
         
         # Skip "cover art" and "acoustid fingerprint" field
-        if "cover art" in str(key).lower() or "acoustid fingerprint" in str(key).lower():
+        if "cover art" in str(key).lower() or "acoustid fingerprint" in str(key).lower() or "covr" in str(key).lower():
             continue  # Skip the iteration if the key contains "cover art" and "acoustid fingerprint"
         
         # Check for extended fields like TXXX and COMM
@@ -88,7 +88,9 @@ def search_keywords(tags, keywords, not_keywords):
                     results.append((key, value))  # Append the found key and value to results
                     print(f"{Back.BLACK}{Fore.GREEN}Keyword '{keyword}' found in field '{key}' with value '{value}' (excluding not_keywords)")
         elif isinstance(value, (list, str)): # Check for extended fields like TXXX and COMM in MP4
-            value_str = str(value[0]) if isinstance(value, list) else str(value)
+
+            value_str = str(value[0]).encode('utf-8', errors='replace').decode('utf-8') if isinstance(value, list) else str(value).encode('utf-8', errors='replace').decode('utf-8')
+            
             for keyword in keywords:
                 if keyword.lower() in value_str.lower() and not any(nk.lower() in value_str.lower() for nk in not_keywords):
                     results.append((key, value))
@@ -211,12 +213,11 @@ def process_directory(directory, keywords, not_keywords):
                             exit(0)  # Exit the script
 
                 else:
-                    print(f"{Back.RED}{Fore.WHITE}No keywords found in {file_path}")  # Notify no keywords found in file
+                    print(f"{Back.BLACK}{Fore.WHITE}No keywords found in {file_path}")  # Notify no keywords found in file
                 
                 # Periodically save results after every 10 files
-                if len(all_results) % 10 == 0:
+                if len(all_results) % 100 == 0:
                     save_results("", all_results)
-
 
     print(f"\n")
     print(f"{Back.BLACK}{Fore.WHITE}Total folders processed: {folder_count}")  # Print total folders processed
