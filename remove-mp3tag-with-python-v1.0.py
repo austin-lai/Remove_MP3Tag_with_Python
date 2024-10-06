@@ -1,4 +1,5 @@
 import os
+import re
 import signal  # Import signal to handle Ctrl+C interruptions
 import json  # Import json to save results in JSON format
 from mutagen.id3 import ID3, ID3NoHeaderError, TXXX, COMM  # Import necessary classes for ID3 tags
@@ -10,8 +11,9 @@ from colorama import init, Fore, Back  # Import colorama for colored terminal ou
 # Initialize colorama to automatically reset colors after each print
 init(autoreset=True)
 
-# Add this global variable at the top of your script
-all_results = []  # Global variable to store results
+# Add this global variable at the top of your script to store results
+global all_results
+all_results = []
 
 # Function to handle script termination when Ctrl+C is pressed and save results before exiting
 def signal_handler(sig, frame):
@@ -150,12 +152,159 @@ def remove_tags(file_path, fields, tag_type):
     except Exception as e:
         print(f"{Back.RED}{Fore.WHITE}Error removing tags from {file_path}: {e}")  # Notify any errors during removal
 
+# Function to modify directory if user wants to change it
+def modify_directory(directory):
+    print(f"{Back.BLACK}{Fore.WHITE}\nCurrent directory: \t{directory}")
+    change_dir = input("Do you want to change the directory? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ").strip().lower()
+    
+    if change_dir in ["yes", "y"]:
+        new_dir = input("Enter new directory: ").strip()
+        directory = new_dir.replace("\\", "\\\\")  # Handle Windows paths with double backslashes
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Directory changed to: \t{directory}")
+    else:
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping changing directory.")  # Notify changing directory
+
+    return directory
+
+# Function to modify keywords if user wants to add/remove them
+def modify_keywords(keywords):
+    print(f"{Back.BLACK}{Fore.WHITE}\n\nCurrent keywords: {keywords}")
+    
+    change_kw = input("\nDo you want to add more keywords? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ").strip().lower()
+    
+    if change_kw in ["yes", "y"]:
+        additional_kw = input("Enter keywords to add (comma separated): ").strip().split(',')
+        keywords.extend([kw.strip() for kw in additional_kw if kw.strip()])  # Add new keywords
+
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}\nUpdated keywords: {keywords}")
+    else:
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping adding keywords.")  # Notify adding keywords
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Updated keywords: {keywords}")
+
+    remove_kw = input("\nDo you want to remove any keywords? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ").strip().lower()
+    
+    if remove_kw in ["yes", "y"]:
+        removal_kw = input("Enter keywords to remove (comma separated): ").strip().split(',')
+        keywords = [kw for kw in keywords if kw not in removal_kw]  # Remove specified keywords
+        
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}\nUpdated keywords: {keywords}")
+    else:
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping removing keywords.")  # Notify removing keywords
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Updated keywords: {keywords}")
+
+    return keywords
+
+# Function to modify not_keywords if user wants to add/remove them
+def modify_not_keywords(not_keywords):
+    print(f"{Back.BLACK}{Fore.WHITE}\n\nCurrent not_keywords: {not_keywords}")
+    
+    change_nkw = input("\nDo you want to add more not_keywords? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ").strip().lower()
+    
+    if change_nkw in ["yes", "y"]:
+        additional_nkw = input("Enter not_keywords to add (comma separated): ").strip().split(',')
+        not_keywords.extend([nkw.strip() for nkw in additional_nkw if nkw.strip()])  # Add new not_keywords
+
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}\nUpdated not_keywords: {not_keywords}")
+    else:
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping adding not_keywords.")  # Notify adding not_keywords
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Updated not_keywords: {not_keywords}")
+    
+    remove_nkw = input("\nDo you want to remove any not_keywords? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ").strip().lower()
+    
+    if remove_nkw in ["yes", "y"]:
+        removal_nkw = input("Enter not_keywords to remove (comma separated): ").strip().split(',')
+        not_keywords = [nkw for nkw in not_keywords if nkw not in removal_nkw]  # Remove specified not_keywords
+    
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}\nUpdated not_keywords: {not_keywords}")
+    else:
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping removing not_keywords.")  # Notify removing keywords
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Updated not_keywords: {not_keywords}")
+    
+    return not_keywords
+
+
+
+
+
+# Function to update the Python script with new values
+def update_script(directory, keywords, not_keywords):
+
+    # Store original values to compare later
+    original_directory = directory
+    original_keywords = keywords[:]
+    original_not_keywords = not_keywords[:]
+
+    directory = modify_directory(directory)  # Allow the user to modify the directory
+    keywords = modify_keywords(keywords)  # Allow the user to modify the keywords
+    not_keywords = modify_not_keywords(not_keywords)  # Allow the user to modify the not_keywords
+
+    script_file = __file__  # Get the current script file name
+    
+    # Read the current script contents
+    with open(script_file, 'r', encoding='utf-8') as f:
+        script_contents = f.read()
+
+    # Check if any changes were made before calling update_script()
+    if directory != original_directory or keywords != original_keywords or not_keywords != original_not_keywords:
+        
+        # Update the directory
+        if directory != original_directory:
+
+            directory_pattern = r'(# Define the directory and keywords for processing\s*\n\s*directory\s*=\s*")(.*?)(")'
+
+            new_directory_value = f'{directory.replace("\\", "\\\\")}'  # Properly escape backslashes
+
+            script_contents = re.sub(directory_pattern, r'\1' + new_directory_value + r'\3', script_contents)
+
+            # Write the updated script back
+            with open(script_file, 'w', encoding='utf-8') as f:
+                f.write(script_contents)
+            print(f"\n")
+            print(f"{Back.GREEN}{Fore.WHITE}Script updated with new directory values.")
+
+        # Update the keywords
+        if keywords != original_keywords:
+
+            keywords_pattern = r'(# Define the list of keywords to search for\s*\n\s*keywords\s*=\s*\[)([^\]]*)(\])'
+
+            new_keywords_value = ", ".join([f'"{k}"' for k in keywords])  # Format keywords as a list of strings
+            
+            script_contents = re.sub(keywords_pattern, r'\1' + new_keywords_value + r'\3', script_contents)
+
+            # Write the updated script back
+            with open(script_file, 'w', encoding='utf-8') as f:
+                f.write(script_contents)
+            print(f"\n")
+            print(f"{Back.GREEN}{Fore.WHITE}Script updated with new keywords values.")
+
+        # Update the not_keywords
+        if not_keywords != original_not_keywords:
+
+            not_keywords_pattern = r'(# Define the list of keywords to exclude from search results\s*\n\s*not_keywords\s*=\s*\[)([^\]]*)(\])'
+
+            new_not_keywords_value = ", ".join([f'"{nk}"' for nk in not_keywords])  # Format not_keywords as a list of strings
+
+            script_contents = re.sub(not_keywords_pattern, r'\1' + new_not_keywords_value + r'\3', script_contents)
+        
+            # Write the updated script back
+            with open(script_file, 'w', encoding='utf-8') as f:
+                f.write(script_contents)
+            print(f"\n")
+            print(f"{Back.GREEN}{Fore.WHITE}Script updated with new not_keywords values.")
+
+    else:
+        print(f"\n")
+        print(f"{Back.GREEN}{Fore.WHITE}No changes made, skipping script update.")
+
+
+
 # Main function to process all audio files in the specified directory
 def process_directory(directory, keywords, not_keywords):
-    global all_results  # Use the global variable
+    
     folder_count = 0  # Initialize folder count
     file_count = 0  # Initialize file count
-    all_results = []  # List to store results for all processed files
+
+    update_script(directory, keywords, not_keywords)
 
     for root, _, files in os.walk(directory):  # Walk through the directory
         folder_count += 1  # Increment folder count
@@ -226,14 +375,19 @@ def process_directory(directory, keywords, not_keywords):
     # Save results to a file only after processing all files
     save_results("", all_results)  # Call the function to save results
 
-# Define the directory and keywords for processing
-directory = "C:\\Users\\Users\\Desktop\\"  # Specify the directory to process
 
-# Define the list of keywords to search for
-keywords = ["https://www."]  # List of keywords
 
-# Define the list of keywords to exclude from search results
-not_keywords = ["deezer", "open.spotify", "lame", "discogs", "GENIE", "pmedia_music", "music.apple", "bandcamp", "beatsource", "YOUNG-LUV.COM", "amazon", "beatport", "junodownload"]  # List of excluded keywords
+# Main execution
+if __name__ == "__main__":
 
-# Process the directory for audio files
-process_directory(directory, keywords, not_keywords)  # Call the main function to process the directory
+    # Define the directory and keywords for processing
+    directory = "C:\\Users\\Users\\Desktop\\"  # Specify the directory to process
+
+    # Define the list of keywords to search for
+    keywords = ["https://www."]  # List of keywords
+
+    # Define the list of keywords to exclude from search results
+    not_keywords = ["deezer", "open.spotify", "lame", "discogs", "GENIE", "pmedia_music", "music.apple", "bandcamp", "beatsource", "YOUNG-LUV.COM", "amazon", "beatport", "junodownload", "WWW.APPLE.COM"]  # List of excluded keywords
+
+    # Process the directory for audio files
+    process_directory(directory, keywords, not_keywords)  # Call the main function to process the directory
