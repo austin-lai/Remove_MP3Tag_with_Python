@@ -293,7 +293,7 @@ def process_directory(directory, keywords, not_keywords):
                 else:
                     print(f"{Back.BLACK}{Fore.WHITE}No keywords found in {file_path}")  # Notify no keywords found in file
                 
-                # Periodically save results after every 10 files
+                # Periodically save results after every 100 files
                 if len(all_results) % 100 == 0:
                     save_results("", all_results)
 
