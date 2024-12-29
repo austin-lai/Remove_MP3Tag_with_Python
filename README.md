@@ -94,7 +94,22 @@ from colorama import init, Fore, Back  # Import colorama for colored terminal ou
 init(autoreset=True)
 
 # Add this global variable at the top of your script to store results
+global all_results
+global directory
 all_results = []
+directory=""
+
+# Function to handle script termination when Ctrl+C is pressed and save results before exiting
+def signal_handler(sig, frame):
+    print(f"\n")  # Print a new line for better readability
+    print(f"{Back.RED}{Fore.WHITE}Script terminated by user (Ctrl+C).")  # Notify the user of termination
+    # Save results if any exist
+    if all_results:
+        save_results("", all_results)  # Save the results before exiting
+    exit(0)  # Exit the script
+
+# Register the signal handler for Ctrl+C interruptions
+signal.signal(signal.SIGINT, signal_handler)
 
 # Function to read ID3 tags from MP3 files
 def read_id3_tags(file_path):
@@ -251,20 +266,6 @@ def save_results(file_path, results):
         print(f"{Back.BLACK}{Fore.WHITE}Results saved to {result_file}")  # Notify where results are saved
         print(f"\n")
 
-# Function to modify directory if user wants to change it
-def modify_directory(directory):
-    print(f"{Back.BLACK}{Fore.WHITE}\nCurrent directory: \t{directory}")
-    change_dir = input("Do you want to change the directory? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ").strip().lower()
-    
-    if change_dir in ["yes", "y"]:
-        new_dir = input("Enter new directory: ").strip()
-        directory = new_dir.replace("\\", "\\\\")  # Handle Windows paths with double backslashes
-        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Directory changed to: \t{directory}")
-    else:
-        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping changing directory.")  # Notify changing directory
-
-    return directory
-
 # Function to modify keywords if user wants to add/remove them
 def modify_keywords(keywords):
     print(f"{Back.BLACK}{Fore.WHITE}\n\nCurrent keywords: {keywords}")
@@ -320,6 +321,20 @@ def modify_not_keywords(not_keywords):
         print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Updated not_keywords: {not_keywords}")
     
     return not_keywords
+
+# Function to modify directory if user wants to change it
+def modify_directory(directory):
+    print(f"{Back.BLACK}{Fore.WHITE}\nCurrent directory: \t{directory}")
+    change_dir = input("Do you want to change the directory? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ").strip().lower()
+    
+    if change_dir in ["yes", "y"]:
+        new_dir = input("Enter new directory: ").strip()
+        directory = new_dir.replace("\\", "\\\\")  # Handle Windows paths with double backslashes
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Directory changed to: \t{directory}")
+    else:
+        print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping changing directory.")  # Notify changing directory
+
+    return directory
 
 # Function to update the Python script with new values
 def update_script(directory, keywords, not_keywords):
@@ -390,14 +405,14 @@ def update_script(directory, keywords, not_keywords):
     else:
         print(f"\n")
         print(f"{Back.GREEN}{Fore.WHITE}No changes made, skipping script update.")
+    
+    return directory, keywords, not_keywords
 
 # Main function to process all audio files in the specified directory
 def process_directory(directory, keywords, not_keywords):
     
     folder_count = 0  # Initialize folder count
     file_count = 0  # Initialize file count
-
-    update_script(directory, keywords, not_keywords)
 
     for root, _, files in os.walk(directory):  # Walk through the directory
         folder_count += 1  # Increment folder count
@@ -485,6 +500,9 @@ if __name__ == "__main__":
 
     # Define the list of keywords to exclude from search results
     not_keywords = ["deezer", "open.spotify", "lame", "discogs", "GENIE", "pmedia_music", "music.apple", "bandcamp", "beatsource", "YOUNG-LUV.COM", "amazon", "beatport", "junodownload", "WWW.APPLE.COM"]  # List of excluded keywords
+    
+    # Call the update_script function and unpack its return values
+    directory, keywords, not_keywords = update_script(directory, keywords, not_keywords)
 
     # Process the directory for audio files
     process_directory(directory, keywords, not_keywords)  # Call the main function to process the directory
