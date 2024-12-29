@@ -170,87 +170,6 @@ def save_results(file_path, results):
         print(f"{Back.BLACK}{Fore.WHITE}Results saved to {result_file}")  # Notify where results are saved
         print(f"\n")
 
-# Main function to process all audio files in the specified directory
-def process_directory(directory, keywords, not_keywords):
-    
-    folder_count = 0  # Initialize folder count
-    file_count = 0  # Initialize file count
-
-    update_script(directory, keywords, not_keywords)
-
-    for root, _, files in os.walk(directory):  # Walk through the directory
-        folder_count += 1  # Increment folder count
-        for file in files:  # Iterate through each file
-            file_path = os.path.join(root, file)  # Construct the full file path
-            if file.endswith(('.mp3', '.m4a', '.flac', '.wma')):  # Check for specific audio file formats
-                file_count += 1  # Increment file count
-                print(f"\n")
-                print(f"{Back.BLACK}{Fore.WHITE}Processing file: {file_path}")  # Notify which file is being processed
-
-                # Initialize all_tags variable to store tags
-                all_tags = None
-                results = []  # List to store results for the current file
-
-                # Try to read ID3 tags for MP3 files
-                if file.endswith('.mp3'):
-                    id3_tags = read_id3_tags(file_path)  # Read ID3 tags
-                    ape_tags = read_ape_tags(file_path)  # Read APE tags
-                    all_tags = id3_tags or ape_tags  # Combine tags if available
-                    
-                    if id3_tags and ape_tags:  # Check if both tag types are present
-                        print(f"{Back.BLACK}{Fore.WHITE}MP3 file contains both ID3 and APEv2 tags")  # Notify presence of both tags
-                        all_tags = {**id3_tags, **ape_tags}  # Merge the tags into a single dictionary
-                    elif not all_tags:  # Check if no tags were found
-                        print(f"{Back.BLACK}{Fore.WHITE}No ID3 or APE tags found in {file_path}")  # Notify no tags found
-                
-                # For .m4a files, read MP4 tags
-                elif file.endswith('.m4a'):
-                    all_tags = read_mp4_tags(file_path)  # Read MP4 tags
-
-                # For .flac files, read FLAC tags
-                elif file.endswith('.flac'):
-                    all_tags = read_flac_tags(file_path)  # Read FLAC tags
-
-                # For other formats, read APEv2 tags
-                else:
-                    all_tags = read_ape_tags(file_path)  # Read APE tags
-
-                if all_tags:  # If any tags were found
-                    results = search_keywords(all_tags, keywords, not_keywords)  # Search for keywords in tags
-
-                    # Store results even if the user interrupts
-                    if results:  # If any results were found
-                        all_results.append((file_path, results))  # Append results to all_results
-                        print(f"{Back.BLACK}{Fore.GREEN}Keywords found in {file_path}:")  # Notify which keywords were found
-                        for key, value in results:  # Iterate through each result
-                            print(f"{Back.BLACK}{Fore.GREEN}{key}: {value}")  # Print the found key-value pair
-                        
-                        try:
-                            user_input = input("\nIs the detection correct? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ")  # Ask for user confirmation
-                            if user_input.lower() in ['yes', 'y']:  # Check if user confirmed
-                                remove_tags(file_path, [key for key, _ in results])  # Remove the confirmed tags
-                            else:
-                                print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping removal of tags.")  # Notify skipping removal
-
-                        except KeyboardInterrupt:  # Catch the Ctrl+C exception
-                            print(f"\n{Back.RED}{Fore.WHITE}Script terminated by user (Ctrl+C). Saving results...")  # Notify user of termination
-                            save_results("", all_results)  # Save the results before exiting
-                            exit(0)  # Exit the script
-
-                else:
-                    print(f"{Back.BLACK}{Fore.WHITE}No keywords found in {file_path}")  # Notify no keywords found in file
-                
-                # Periodically save results after every 100 files
-                if len(all_results) % 100 == 0:
-                    save_results("", all_results)
-
-    print(f"\n")
-    print(f"{Back.BLACK}{Fore.WHITE}Total folders processed: {folder_count}")  # Print total folders processed
-    print(f"{Back.BLACK}{Fore.WHITE}Total files processed: {file_count}")  # Print total files processed
-
-    # Save results to a file only after processing all files
-    save_results("", all_results)  # Call the function to save results
-
 # Function to modify directory if user wants to change it
 def modify_directory(directory):
     print(f"{Back.BLACK}{Fore.WHITE}\nCurrent directory: \t{directory}")
@@ -390,6 +309,87 @@ def update_script(directory, keywords, not_keywords):
     else:
         print(f"\n")
         print(f"{Back.GREEN}{Fore.WHITE}No changes made, skipping script update.")
+
+# Main function to process all audio files in the specified directory
+def process_directory(directory, keywords, not_keywords):
+    
+    folder_count = 0  # Initialize folder count
+    file_count = 0  # Initialize file count
+
+    update_script(directory, keywords, not_keywords)
+
+    for root, _, files in os.walk(directory):  # Walk through the directory
+        folder_count += 1  # Increment folder count
+        for file in files:  # Iterate through each file
+            file_path = os.path.join(root, file)  # Construct the full file path
+            if file.endswith(('.mp3', '.m4a', '.flac', '.wma')):  # Check for specific audio file formats
+                file_count += 1  # Increment file count
+                print(f"\n")
+                print(f"{Back.BLACK}{Fore.WHITE}Processing file: {file_path}")  # Notify which file is being processed
+
+                # Initialize all_tags variable to store tags
+                all_tags = None
+                results = []  # List to store results for the current file
+
+                # Try to read ID3 tags for MP3 files
+                if file.endswith('.mp3'):
+                    id3_tags = read_id3_tags(file_path)  # Read ID3 tags
+                    ape_tags = read_ape_tags(file_path)  # Read APE tags
+                    all_tags = id3_tags or ape_tags  # Combine tags if available
+                    
+                    if id3_tags and ape_tags:  # Check if both tag types are present
+                        print(f"{Back.BLACK}{Fore.WHITE}MP3 file contains both ID3 and APEv2 tags")  # Notify presence of both tags
+                        all_tags = {**id3_tags, **ape_tags}  # Merge the tags into a single dictionary
+                    elif not all_tags:  # Check if no tags were found
+                        print(f"{Back.BLACK}{Fore.WHITE}No ID3 or APE tags found in {file_path}")  # Notify no tags found
+                
+                # For .m4a files, read MP4 tags
+                elif file.endswith('.m4a'):
+                    all_tags = read_mp4_tags(file_path)  # Read MP4 tags
+
+                # For .flac files, read FLAC tags
+                elif file.endswith('.flac'):
+                    all_tags = read_flac_tags(file_path)  # Read FLAC tags
+
+                # For other formats, read APEv2 tags
+                else:
+                    all_tags = read_ape_tags(file_path)  # Read APE tags
+
+                if all_tags:  # If any tags were found
+                    results = search_keywords(all_tags, keywords, not_keywords)  # Search for keywords in tags
+
+                    # Store results even if the user interrupts
+                    if results:  # If any results were found
+                        all_results.append((file_path, results))  # Append results to all_results
+                        print(f"{Back.BLACK}{Fore.GREEN}Keywords found in {file_path}:")  # Notify which keywords were found
+                        for key, value in results:  # Iterate through each result
+                            print(f"{Back.BLACK}{Fore.GREEN}{key}: {value}")  # Print the found key-value pair
+                        
+                        try:
+                            user_input = input("\nIs the detection correct? Please enter 'yes' or 'y' to confirm (or press 'Enter' to skip): ")  # Ask for user confirmation
+                            if user_input.lower() in ['yes', 'y']:  # Check if user confirmed
+                                remove_tags(file_path, [key for key, _ in results])  # Remove the confirmed tags
+                            else:
+                                print(f"{Back.BLACK}{Fore.LIGHTRED_EX}Skipping removal of tags.")  # Notify skipping removal
+
+                        except KeyboardInterrupt:  # Catch the Ctrl+C exception
+                            print(f"\n{Back.RED}{Fore.WHITE}Script terminated by user (Ctrl+C). Saving results...")  # Notify user of termination
+                            save_results("", all_results)  # Save the results before exiting
+                            exit(0)  # Exit the script
+
+                else:
+                    print(f"{Back.BLACK}{Fore.WHITE}No keywords found in {file_path}")  # Notify no keywords found in file
+                
+                # Periodically save results after every 100 files
+                if len(all_results) % 100 == 0:
+                    save_results("", all_results)
+
+    print(f"\n")
+    print(f"{Back.BLACK}{Fore.WHITE}Total folders processed: {folder_count}")  # Print total folders processed
+    print(f"{Back.BLACK}{Fore.WHITE}Total files processed: {file_count}")  # Print total files processed
+
+    # Save results to a file only after processing all files
+    save_results("", all_results)  # Call the function to save results
 
 
 
