@@ -169,7 +169,7 @@ def search_keywords(tags, keywords, not_keywords):
 
         # Skip "cover art" and "acoustid fingerprint" field
         key_str = str(key).lower()
-        if "cover art" in key_str or "cover" in key_str or "acoustid fingerprint" in key_str or "covr" in key_str or "unsyncedlyrics" in key_str or "lyrics" in key_str or "lyr" in key_str or "acoustid_fingerprint" in key_str or "tcon" in key_str or "com.apple.itunes" in key_str or "spotify_release_id" in key_str:
+        if "cover art" in key_str or "cover" in key_str or "acoustid fingerprint" in key_str or "covr" in key_str or "unsyncedlyrics" in key_str or "lyrics" in key_str or "lyr" in key_str or "acoustid_fingerprint" in key_str or "tcon" in key_str or "com.apple.itunes" in key_str or "spotify_release_id" in key_str or "apic" in key_str:
             print(f"Skipping field: {key_str}")  # Debug print to verify exclusion
             continue  # Skip the iteration if the key contains "cover art" and "acoustid fingerprint"
         
@@ -191,25 +191,44 @@ def search_keywords(tags, keywords, not_keywords):
 
 # Function to remove specified tags from an audio file
 def remove_tags(file_path, fields):
+
     try:
         # Detect the file type and create the appropriate tags object
         if file_path.endswith('.mp3'):
             id3_tags = ID3(file_path)
-            ape_tags = APEv2(file_path)
-            tags_list = [id3_tags, ape_tags]
+            try:
+                ape_tags = APEv2(file_path)
+                tags_list = [id3_tags, ape_tags]
+            except Exception as e:
+                print(f"No APE tags found in {file_path}: {e}")
+                tags_list = [id3_tags]
         elif file_path.endswith('.m4a'):
             mp4_tags = MP4(file_path)
             id3_tags = ID3(file_path)
-            ape_tags = APEv2(file_path)
-            tags_list = [mp4_tags,id3_tags, ape_tags]
+            try:
+                ape_tags = APEv2(file_path)
+                tags_list = [mp4_tags, id3_tags, ape_tags]
+            except Exception as e:
+                print(f"No APE tags found in {file_path}: {e}")
+                tags_list = [mp4_tags, id3_tags]
         elif file_path.endswith('.flac'):
             flac_tags = FLAC(file_path)
-            tags_list = [flac_tags]
+            id3_tags = ID3(file_path)
+            try:
+                ape_tags = APEv2(file_path)
+                tags_list = [flac_tags, id3_tags, ape_tags]
+            except Exception as e:
+                print(f"No APE tags found in {file_path}: {e}")
+                tags_list = [flac_tags, id3_tags]
         elif file_path.endswith('.wma'):
             mp4_tags = MP4(file_path)
             id3_tags = ID3(file_path)
-            ape_tags = APEv2(file_path)
-            tags_list = [mp4_tags,id3_tags, ape_tags]
+            try:
+                ape_tags = APEv2(file_path)
+                tags_list = [mp4_tags, id3_tags, ape_tags]
+            except Exception as e:
+                print(f"No APE tags found in {file_path}: {e}")
+                tags_list = [mp4_tags, id3_tags]
         else:
             print(f"{Back.RED}{Fore.WHITE}Unsupported file type: {file_path}")
             return
